@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+  redis:
+    image: redis
+    container_name: master
+    ports:
+      - "6379:6379"
+    networks:
+      redis-replication:
+        ipv4_address: 172.100.0.100
+
+  redis-slave01:
+    image: redis
+    container_name: slave01
+    ports:
+      - "6380:6379"
+    command: redis-server --slaveof master 6379
+    depends_on:
+      - redis
+    networks:
+      - redis-replication
+
+  redis-slave02:
+    image: redis
+    container_name: slave02
+    ports:
+      - "6381:6379"
+    command: redis-server --slaveof master 6379
+    depends_on:
+      - redis
+    networks:
+      - redis-replication
+
+  sentinel1:
+    image: redis
+    container_name: redis-sentinel-1
+    ports:
+      - 26379:26379
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./conf/sentinel1.conf:/usr/local/etc/redis/sentinel.conf
+    networks:
+      - redis-replication
+
+  sentinel2:
+    image: redis
+    container_name: redis-sentinel-2
+    ports:
+      - 26380:26379
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./conf/sentinel2.conf:/usr/local/etc/redis/sentinel.conf
+    networks:
+      - redis-replication
+
+  sentinel3:
+    image: redis
+    container_name: redis-sentinel-3
+    ports:
+      - 26381:26379
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./conf/sentinel3.conf:/usr/local/etc/redis/sentinel.conf
+    networks:
+      - redis-replication
+
+
+networks:
+  redis-replication:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.100.0.0/24"
